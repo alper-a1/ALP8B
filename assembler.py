@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compiler for a custom 8-bit ISA's assembly language to raw machine code.
+"""Assembler for the ALP8B ISA's assembly language to raw machine code.
 
 Parsing rules:
     - Labels must be on their own line and end with ':' (so no comments on label lines).
@@ -132,6 +132,10 @@ def assemble(lines: list[str], labels: dict[str, int]) -> list[int]:
         elif instr == "LDI":
             ra = tokens[1]
             imm = int(tokens[2], 0)
+            
+            if imm < 0 or imm >= 256:
+                raise AsmError("value error: 'LDI' cannot initialise value outside of 8-bit range")
+            
             mem[pc] = INSTRS[instr] | (REGISTERS[ra] << 2)
             mem[pc + 1] = imm
             pc += 2
@@ -139,6 +143,16 @@ def assemble(lines: list[str], labels: dict[str, int]) -> list[int]:
         elif instr == "INI":
             addr = int(tokens[1], 0)
             val = int(tokens[2], 0)
+            
+            if addr >= MEM_SIZE:
+                raise AsmError("value error: 'INI' cannot initialise out of bounds memory")
+            
+            if val < 0 or val >= 256:
+                raise AsmError("value error: 'INI' cannot initialise value outside of 8-bit range")
+            
+            if addr <= pc:
+                raise AsmError("initalisation error: 'INI' tried to overwrite program memory")
+            
             mem[addr] = val
             # PC intentionally not advanced; INI writes directly to memory.
 
@@ -198,8 +212,8 @@ def compile_file(source: Path, output_dir: Path | None, chunk_size: int) -> tupl
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="asm_compiler",
-        description="Compile custom 8-bit ISA assembly (.asm) into a debug listing and Intel HEX image.",
+        prog="ALP8B assembler",
+        description="Compile ALP8B assembly (.asm) into a debug listing and Intel HEX image.",
     )
     parser.add_argument(
         "sources",
