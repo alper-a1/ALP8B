@@ -38,7 +38,8 @@ Couple of reasons:
 
 - **Fibonacci:** Calculates the first 10 Fibonacci numbers after '1' and places them in RAM 0xF0 onwards.
 - **Fibonacci16:** Calculates the first 25 Fibonacci numbers. Uses 2 bytes per number to allow for the larger Fibonacci numbers to be computed. Implemented via a moving two pointer moving window approach.
-- TBD
+- **Worm:** Worm program that slithers through memory automatically copying itself and also killing its ancestors. Personal favourite program
+![Worm gif](./programs/worm/worm.gif)
 
 ## Repository Structure
 
@@ -48,6 +49,7 @@ Couple of reasons:
 ├── microcode/              # Python based microcode generator
 ├── programs/               # Premade sample programs
 │   ├── fibonacci16/
+│   ├── worm/
 │   └── ...
 ├── simulation/             # Simulation files
 ├── assembler.py            # Python based assembler used to write ALP8B software
