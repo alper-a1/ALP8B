@@ -33,6 +33,7 @@ Couple of reasons:
 3. In Digital, navigate to: `Edit -> Circuit Specific Settings -> Advanced -> Program File`
 4. Select the path of any given `.hex` file compiled with `assembler.py`. Sample programs can be found in [programs](./programs/)
 5. To view program output, right click the EEPROM component during runtime, or press `F6` for overview on current register data values.
+6. OPTIONAL: Edit the core clock speed by right clicking on the `CLK` input. Most demo programs are simulated with <2000Hz core clock.
 
 ## Sample Programs
 
@@ -40,6 +41,8 @@ Couple of reasons:
 - **Fibonacci16:** Calculates the first 25 Fibonacci numbers. Uses 2 bytes per number to allow for the larger Fibonacci numbers to be computed. Implemented via a moving two pointer moving window approach.
 - **Worm:** Worm program that slithers through memory automatically copying itself and also killing its ancestors. Personal favourite program
 ![Worm gif](./programs/worm/worm.gif)
+- **"DVD" Screensaver:** Simulates a "DVD" as a byte in memory that bounces around a set region in RAM. Wait for it to hit a corner!
+![DVD gif](./programs/dvd/dvd.gif)
 
 ## Repository Structure
 
@@ -50,6 +53,7 @@ Couple of reasons:
 ├── programs/               # Premade sample programs
 │   ├── fibonacci16/
 │   ├── worm/
+│   ├── dvd/
 │   └── ...
 ├── simulation/             # Simulation files
 ├── assembler.py            # Python based assembler used to write ALP8B software
