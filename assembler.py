@@ -4,9 +4,8 @@
 Parsing rules:
     - Labels must be on their own line and end with ':' (so no comments on label lines).
     - Anything after a ';' is a comment.
-    - Jumps must target a label.
-    - INI (initialize memory) directives must appear after the last real
-      instruction (either HLT or an infinite loop).
+    - Jumps can target a label (via 'JMP label') OR can target a raw hex address (via JMP 0xAA) - the '0x' prefix is REQUIRED.
+    - INI directive with '!' prefix in front of the address overwrites the given address without protection (no assembler error)
 """
 from __future__ import annotations
 
@@ -45,8 +44,11 @@ INSTRS: dict[str, int] = {
     "LDI": 0b11_11_00_00,
 }
 
-# Compiler-only pseudo-instructions (not emitted by the ISA itself).
-COMP_INSTRS = ("INI",)
+# Assembler-only pseudo-instructions (not emitted by the ISA itself).
+# INI: initialise memory at address
+# PCS: set PC to value for ASSEMBLY only. USE WITH CARE: EXECUTION ORDER DOES NOT CHANGE 
+
+COMP_INSTRS = ("INI", "PCS")
 
 REGISTERS: dict[str, int] = {
     "R0": 0b00,
@@ -63,6 +65,8 @@ DOUBLE_REG_INSTRS = ("CMP", "SUB", "ADC", "ORR", "AND", "XOR", "LDM", "STM", "MO
 
 class AsmError(Exception):
     """Raised for assembly-time errors (bad syntax, unknown label, etc.)."""
+    def __init__(self, lineno, message):
+        super().__init__(f"line={lineno} {message}")
 
 
 def read_source_lines(path: Path) -> list[str]:
@@ -81,17 +85,32 @@ def build_label_table(lines: list[str]) -> dict[str, int]:
     """First pass: compute the address of every label."""
     labels: dict[str, int] = {}
     pc = 0
-    for line in lines:
+    for i, line in enumerate(lines):
         if line.endswith(":"):
             name = line[:-1].strip()
             if name in labels:
-                raise AsmError(f"duplicate label: {name!r}")
+                raise AsmError(i, f"duplicate label: {name!r}")
+            elif name.startswith("0x"):
+                raise AsmError(i, f"label error: cannot start with literal hex marker '0x'")
+            
             labels[name] = pc
         else:
             instr = line.split()[0]
+            # increment PC normally for ISA instructions
             if instr in INSTRS:
                 pc += instr_width(instr)
-            # COMP_INSTRS (e.g. INI) don't advance the PC; they write directly.
+            
+            elif instr in COMP_INSTRS:
+                # PCS manipulates the program counter
+                if (instr == "PCS"):
+                    # address for the pc to become is the first argument of PCS
+                    new_pc = int(line.split()[1], 0)
+                    
+                    if (new_pc >= 256 or new_pc < 0):
+                        raise AsmError(i, "value error: 'PCS' cannot set PC out of bounds")
+                    
+                    pc = new_pc
+                
     return labels
 
 
@@ -100,7 +119,10 @@ def assemble(lines: list[str], labels: dict[str, int]) -> list[int]:
     mem = [0] * MEM_SIZE
     pc = 0
 
-    for line in lines:
+    for i, line in enumerate(lines):
+        if pc >= MEM_SIZE:
+            raise AsmError(i, "memory overflow: program exceeded 256 bytes")
+        
         if line.endswith(":"):
             continue  # labels emit nothing
 
@@ -113,10 +135,18 @@ def assemble(lines: list[str], labels: dict[str, int]) -> list[int]:
 
         elif instr in JUMP_INSTRS:
             label = tokens[1]
-            if label not in labels:
-                raise AsmError(f"undefined label: {label!r}")
+            
             mem[pc] = INSTRS[instr]
-            mem[pc + 1] = labels[label]
+            
+            if (label.startswith("0x")):
+                raw_addr = int(label, 0)
+                mem[pc + 1] = raw_addr
+            else:
+                if label not in labels:
+                    raise AsmError(i, f"undefined label: {label!r}")
+                
+                mem[pc + 1] = labels[label]
+            
             pc += 2
 
         elif instr in SINGLE_REG_INSTRS:
@@ -134,30 +164,48 @@ def assemble(lines: list[str], labels: dict[str, int]) -> list[int]:
             imm = int(tokens[2], 0)
             
             if imm < 0 or imm >= 256:
-                raise AsmError("value error: 'LDI' cannot initialise value outside of 8-bit range")
+                raise AsmError(i, "value error: 'LDI' cannot initialise value outside of 8-bit range")
             
             mem[pc] = INSTRS[instr] | (REGISTERS[ra] << 2)
             mem[pc + 1] = imm
             pc += 2
 
         elif instr == "INI":
-            addr = int(tokens[1], 0)
+            addr_raw = tokens[1]
+            overwrite = False
+            
+            # INI can initialise anywhere (within bounds) if addr token is prefixed with a '!'
+            if addr_raw.startswith('!'):
+                addr = int(addr_raw[1:], 0)
+                overwrite = True
+            else:
+                addr = int(addr_raw, 0)                
+            
             val = int(tokens[2], 0)
             
             if addr >= MEM_SIZE:
-                raise AsmError("value error: 'INI' cannot initialise out of bounds memory")
+                raise AsmError(i, "value error: 'INI' cannot initialise out of bounds memory")
             
             if val < 0 or val >= 256:
-                raise AsmError("value error: 'INI' cannot initialise value outside of 8-bit range")
+                raise AsmError(i, "value error: 'INI' cannot initialise value outside of 8-bit range")
             
-            if addr <= pc:
-                raise AsmError("initalisation error: 'INI' tried to overwrite program memory")
+            if addr <= pc and not overwrite:
+                raise AsmError(i, "initalisation error: 'INI' tried to overwrite program memory")
             
             mem[addr] = val
             # PC intentionally not advanced; INI writes directly to memory.
 
+        elif instr == "PCS":
+            # address for the pc to become is the first argument of PCS
+            new_pc = int(tokens[1], 0)
+            
+            if (new_pc >= 256 or new_pc < 0):
+                raise AsmError(i, "value error: 'PCS' cannot set PC out of bounds")
+            
+            pc = new_pc
+
         else:
-            raise AsmError(f"unknown instruction: {instr!r}")
+            raise AsmError(i, f"unknown instruction: {instr!r}")
 
     return mem
 
