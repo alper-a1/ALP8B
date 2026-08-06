@@ -1,2 +1,4 @@
 # libreoffice lock files
 .~lock.*#
+
+.vscode
