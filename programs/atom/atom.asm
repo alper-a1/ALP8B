@@ -112,7 +112,7 @@ row_9:
 INC R1
 STM R1 R0       ; move dir pointer forwad and save
 XOR R2 R2       
-LDI R3 10       ; init R2/R3 for busy loop
+LDI R3 17       ; init R2/R3 for busy loop (17 since this path takes longer to get to)
 JMP busyloop
 INI !0xBA 0xC0
 INI !0xBB 0xFF
@@ -124,7 +124,7 @@ reset_dir_pointer:
 LDI R3 0x43     ; address of first dir velo var
 STM R3 R0       ; store refreshed address
 XOR R2 R2      
-LDI R3 8        ; init R2/R3 for busy loop
+LDI R3 17       ; init R2/R3 for busy loop (17 since this path takes longer to get to)
 JMP busyloop
 INI !0xCB 0xBE
 INI !0xCC 0xEF
