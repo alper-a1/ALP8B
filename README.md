@@ -40,9 +40,14 @@ Couple of reasons:
 - **Fibonacci:** Calculates the first 10 Fibonacci numbers after '1' and places them in RAM 0xF0 onwards.
 - **Fibonacci16:** Calculates the first 25 Fibonacci numbers. Uses 2 bytes per number to allow for the larger Fibonacci numbers to be computed. Implemented via a moving two pointer moving window approach.
 - **Worm:** Worm program that slithers through memory automatically copying itself and also killing its ancestors. Personal favourite program
+
 ![Worm gif](./programs/worm/worm.gif)
 - **"DVD" Screensaver:** Simulates a "DVD" as a byte in memory that bounces around a set region in RAM. Wait for it to hit a corner!
+
 ![DVD gif](./programs/dvd/dvd.gif)
+- **Atom:** Simulates two "electrons" orbiting their "nucleus" (the program code). Bootstrapps itself into the nucleus code.
+
+![atom gif](./programs/atom/atom.gif)
 
 ## Repository Structure
 
