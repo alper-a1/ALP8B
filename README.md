@@ -3,8 +3,6 @@ Alp(er's) 8-B(it) Computer
 
 ![Architecture Diagram](./images/archdiagram.jpg)
 
-NOTE: As of 23/07/2026 this project is not yet finalised! (still writing a few more sample programs)
-
 ## What Is This?
 
 A custom 8-bit ISA and simulated computer hardware project built during semester break.
@@ -45,7 +43,7 @@ Couple of reasons:
 - **"DVD" Screensaver:** Simulates a "DVD" as a byte in memory that bounces around a set region in RAM. Wait for it to hit a corner!
 
 ![DVD gif](./programs/dvd/dvd.gif)
-- **Atom:** Simulates two "electrons" orbiting their "nucleus" (the program code). Bootstrapps itself into the nucleus code.
+- **Atom:** Simulates two "electrons" orbiting their "nucleus" (the program code). Bootstraps itself into the nucleus code, as the PC always starts at 0x00.
 
 ![atom gif](./programs/atom/atom.gif)
 
@@ -59,6 +57,7 @@ Couple of reasons:
 │   ├── fibonacci16/
 │   ├── worm/
 │   ├── dvd/
+│   ├── atom/
 │   └── ...
 ├── simulation/             # Simulation files
 ├── assembler.py            # Python based assembler used to write ALP8B software
